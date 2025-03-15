@@ -63,29 +63,30 @@ input[type="file"] {
 }
 
 .processbar {
-    width: 325px;
-    background: #fff9;
+    width: 260px;
+    background: #CCC5;
     height: 8px;
     overflow: hidden;
     border-radius: 4px;
-    box-shadow: 0 0 3px #0009;
+    box-shadow: 0 0 3px #0005;
 }
 
 .process {
     width: 0%;
     height: 100%;
-    background: #5555;
+    background: #FFF;
     border-radius: 4px;
     box-shadow: 0 0 3px #0009;
 }
 
 .time {
     margin-top: 60px;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 325px;
-    color: #fff9;
+    width: 260px;
+    color: rgb(255, 255, 255);
     text-shadow: 0 0 3px #0009;
 }
 
@@ -104,6 +105,7 @@ p {
     gap: 15px;
     align-items: center;
     margin-top: 20px;
+    
     position: relative; /* 新增定位 */
 }
 
@@ -125,6 +127,20 @@ p {
     color:#fff;
 }
 
+.controls i::before{
+    font-weight: 600 !important;
+    text-shadow: 0 0 3px #0009;
+    width:30px;
+    height: 30px;
+    line-height: 45px;
+    text-align: center;
+}
+
+.controls i{
+    width:30px;
+    height: 40px;
+}
+
 /* 确保SVG图标可见 */
 .controls svg {
     width: 100%;
@@ -143,14 +159,18 @@ p {
 
 .play {
     display: block;
-    font-size: 36px;
-    
+    width: 40px;
+    height: 40px;;
+    text-align: center;
+    line-height: 40px;
 }
 
 .pause {
     display: none;
-    font-size: 36px;
-    
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    line-height: 40px;
 }
 
 
@@ -366,7 +386,7 @@ p {
 .name-container {
     width: 250px;
     margin: 0 auto 20px;
-    position: relative;
+    
     overflow: hidden;
     mask: linear-gradient(90deg, 
         transparent 0%, 
@@ -383,7 +403,7 @@ p {
     padding:0 5px 0 5px; /* 两侧留白 */
     display: inline-block;
     white-space: nowrap;
-    animation: marquee 15s linear infinite;
+    animation: move 15s linear infinite;
     text-shadow: 0 2px 8px rgba(0,0,0,0.9);
     --width: 0px;
 }
@@ -394,7 +414,8 @@ p {
 .name-container {
     width: 250px;
     display: flex !important; /* 新增 */
-    justify-content: center; /* 新增 */
+    justify-content: left; /* 新增 */
+    text-align: left;
     margin: 0 auto 15px; /* 减少底部间距 */
     padding: 0 20px; /* 添加左右内边距 */
     mask: linear-gradient(90deg, 
@@ -412,25 +433,15 @@ p {
     width: var(--container-width);
     height: 40px;
     overflow: hidden;
-    position: relative;
+    
 }
 
 /* 动态计算的关键帧动画 */
-@keyframes marquee {
-    0% {
-        /*transform: translateX(250px);  初始位置：容器右侧 */
-        transform: translateX(95%);
-    }
-    100% {
-        /* transform: translateX(250px) translateX(-100%); 结束位置：完全移出左侧 */
-        
-        transform: translateX(-95%);
-    }
-}
+
 
 .name.scroll {
-    
-    animation: marquee calc(var(--scroll-duration)) linear infinite;
+    text-align: left;
+    animation: move calc(var(--scroll-duration)) linear infinite;
     
 }
 
@@ -442,7 +453,7 @@ p {
 
 .name {
     padding: 0 10px; /* 减少文字两侧间距 */
-    animation: marquee 8s linear infinite; /* 加快滚动速度 */
+    animation: move 8s linear infinite; /* 加快滚动速度 */
 }
 
 /* 悬停时显示完整标题 */
@@ -490,10 +501,24 @@ p {
 }
 
 .title-container {
-    position: relative;
+    
     width: 100%;
     margin-bottom: 20px;
     min-height: 40px; /* 确保容器高度 */
+}
+
+/* 添加歌词点击样式 */
+.lyrics > div {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.lyrics > div:active {
+    transform: scale(0.95);
+}
+
+.lyrics > div:hover {
+    opacity: 0.7 !important;
 }
 
 

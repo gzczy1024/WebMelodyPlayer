@@ -23,6 +23,7 @@ let lrcData;
 let lyrics = [];
 let lyricsElement = document.querySelector(".lyrics");
 let reader;
+var isChoosing = false;
 document.querySelector('.play').style.display = 'block';
 document.querySelector('.pause').style.display = 'none';
 
@@ -31,11 +32,9 @@ svgcontainer.addEventListener("click", async () => {
 });
 
 audioPlayer.addEventListener("loadedmetadata", () => {
-    endTime.textContent = `-${formatTime(audioPlayer.duration)}`;
-    /*setTimeout(() => {
-        playBtn.click();
-    }, 100);*/
+    endTime.textContent = `${formatTime(audioPlayer.duration)}`;
 });
+
 
 
 
@@ -71,7 +70,7 @@ audioPlayer.addEventListener("timeupdate", () => {
     if (audioPlayer.duration) {
         process.style.width = `${(audioPlayer.currentTime / audioPlayer.duration) * 100}%`;
         startTime.textContent = formatTime(audioPlayer.currentTime);
-        endTime.textContent = `-${formatTime(audioPlayer.duration - audioPlayer.currentTime)}`;
+        //endTime.textContent = `-${formatTime(audioPlayer.duration - audioPlayer.currentTime)}`;
     }
 });
 
@@ -93,22 +92,7 @@ document.addEventListener("mouseup", () => {
     isDragging = false;
 });
 
-/*playBtn.addEventListener("click", () => {
-    if (Number.isNaN(audioPlayer.duration)) {
-        return;
-    }
-    playing = true;
-    audioPlayer.play();
-    pauseBtn.style.display = "block";
-    playBtn.style.display = "none";
-});
 
-pauseBtn.addEventListener("click", () => {
-    playing = false;
-    audioPlayer.pause();
-    pauseBtn.style.display = "none";
-    playBtn.style.display = "block";
-});*/
 // 修改播放按钮点击事件
 document.querySelector('.play-container').addEventListener('click', () => {
     if (Number.isNaN(audioPlayer.duration)) return;
@@ -117,23 +101,13 @@ document.querySelector('.play-container').addEventListener('click', () => {
     } else {
         audioPlayer.play();
     }
-    /*if (playing) {
-        audioPlayer.pause();
-        document.querySelector('.play').style.display = 'block';
-        document.querySelector('.pause').style.display = 'none';
-        playing = false;
-    } else {
-        audioPlayer.play();
-        document.querySelector('.play').style.display = 'none';
-        document.querySelector('.pause').style.display = 'block';
-        playing = true;
-    }*/
     
+
 });
 
 
 function updateProgress(event) {
-    
+
     const rect = progressBar.getBoundingClientRect();
     const clickPosition = event.clientX - rect.left;
     const progressBarWidth = rect.width;
@@ -193,24 +167,24 @@ let scrollTimeout;
 window.addEventListener('wheel', handleScroll);
 
 function handleScroll() {
-  // 更新滚动状态（如果尚未设置）
-  if (isScrolling === 0) {
-    isScrolling = 1;
-    
-    document.querySelectorAll('.lyrics > *').forEach((line, index) => {
-        line.style.filter = "none";
-    })
-        
-  }
+    // 更新滚动状态（如果尚未设置）
+    if (isScrolling === 0) {
+        isScrolling = 1;
 
-  // 清除之前的定时器
-  clearTimeout(scrollTimeout);
+        document.querySelectorAll('.lyrics > *').forEach((line, index) => {
+            line.style.filter = "none";
+        })
 
-  // 设置新的定时器
-  scrollTimeout = setTimeout(() => {
-    isScrolling = 0;
-    
-  }, 3000);
+    }
+
+    // 清除之前的定时器
+    clearTimeout(scrollTimeout);
+
+    // 设置新的定时器
+    scrollTimeout = setTimeout(() => {
+        isScrolling = 0;
+
+    }, 3000);
 }
 
 // 可选：检测触摸屏滑动（移动端支持）
@@ -238,7 +212,7 @@ function updateLyrics() {
         } else {
             line.classList.remove("highlight");
             line.classList.add("lowlight");
-            if(isScrolling == 0){
+            if (isScrolling == 0) {
                 line.style.filter = `blur(${Math.abs(activeIndex - index) * 0.35}px)`;
             }
             line.style.marginLeft = `${Math.abs(activeIndex - index) * 1.25}px`;
@@ -247,16 +221,16 @@ function updateLyrics() {
 
     if (activeIndex >= 0) {
         const activeLine = lyricLines[activeIndex];
-        
-        if(isScrolling == 0){
-            
+
+        if (isScrolling == 0 || isChoosing == true) {
+
             if (activeLine) {
                 // 使用 scrollIntoView 方法滚动到当前活动的歌词行
                 activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
     }
-    
+
     if (playing) {
         requestAnimationFrame(updateLyrics);
     }
@@ -392,85 +366,95 @@ function renderSongList(songsArray) {
             loadSong(index);
         });
     });
+
     
-    //toggleListButton.click()
 }
 
 // 新增歌曲加载函数
 // 新增搜索功能
-document.getElementById('searchInput').addEventListener('input', function(e) {
-    if(e.target.value != ""){
+document.getElementById('searchInput').addEventListener('input', function (e) {
+    if (e.target.value != "") {
         const searchTerm = e.target.value.toLowerCase();
-        const filtered = songs.filter(song => 
+        const filtered = songs.filter(song =>
             song.name.toLowerCase().includes(searchTerm)
         );
         renderSongList(filtered);
-    }else{
+    } else {
         renderSongList(songs);
     }
 });
 
 function updateLyricsDisplay() {
-    lyricsElement.innerHTML = "";
+    // 清空现有歌词
+    while (lyricsElement.firstChild) {
+        lyricsElement.removeChild(lyricsElement.firstChild);
+    }
+
+    // 创建文档片段提升性能
+    const fragment = document.createDocumentFragment();
+
     lyrics.forEach(line => {
         const lyricDiv = document.createElement('div');
-        lyricDiv.className = 'lowlight';
+        // 使用更精确的时间戳存储方式
         lyricDiv.dataset.time = line.time;
-        lyricDiv.innerHTML = line.originalText;
-        if (line.translation) {
-            lyricDiv.innerHTML += `<br>${line.translation}`;
-        }
-        if (line.romaji) {
-            lyricDiv.innerHTML += `<br>${line.romaji}`;
-        }
-        lyricsElement.appendChild(lyricDiv);
-    });
-    lyricsElement.innerHTML += "<div><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br></div>";
-}
+        lyricDiv.className = 'lowlight';
 
-/*function loadSong(index) {
-    if (index < 0 || index >= songs.length) return;
-    currentSongIndex = index;
-    const song = songs[index];
-    // 重置播放进度
-    audioPlayer.pause()
-    audioPlayer.currentTime = 0; // 新增的进度重置代码
-    process.style.width = '0%'; // 重置进度条
-    // 加载音频
-    audioPlayer.src = URL.createObjectURL(song.audio);
-    audioName.textContent = song.name;
-    // 保持播放按钮状态正确
-    document.querySelector('.play').style.display = 'none';
-    document.querySelector('.pause').style.display = 'block';
-    
+        // 使用textContent防止XSS
+        const content = [line.originalText, line.translation, line.romaji]
+            .filter(Boolean)
+            .join('<br>');
+        lyricDiv.innerHTML = content;
 
-    
-
-    // 加载音频
-    audioPlayer.src = URL.createObjectURL(song.audio);
-    audioName.textContent = song.name;
-    audioPlayer.play();
-    
-    // 加载歌词
-    if (song.lrc) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            lyrics = parseLrc(e.target.result);
-            updateLyricsDisplay();
+        // 使用事件委托代替单独绑定
+        lyricDiv.onclick = function (e) {
+            e.stopPropagation();
+            handleLyricClick(this.dataset.time);
         };
-        reader.readAsText(song.lrc);
-    }
 
-    // 加载封面
-    if (song.image) {
-        bgImg.src = URL.createObjectURL(song.image);
-    }
+        fragment.appendChild(lyricDiv);
+    });
 
-    // 自动播放
-    
-    //playing =true;
+    // 添加占位符（避免使用innerHTML）
+    const placeholder = document.createElement('div');
+    placeholder.innerHTML = '<br>'.repeat(15);
+    fragment.appendChild(placeholder);
+
+    lyricsElement.appendChild(fragment);
 }
-*/
+
+// 新增统一处理函数
+function handleLyricClick(time) {
+    if (!audioPlayer.src || !audioPlayer.duration) {
+        console.warn('音频尚未加载');
+        return;
+    }
+
+    const targetTime = Math.min(parseFloat(time), audioPlayer.duration - 0.1);
+
+    // 使用requestAnimationFrame保证同步
+    requestAnimationFrame(() => {
+        audioPlayer.currentTime = targetTime;
+        process.style.width = `${(targetTime / audioPlayer.duration) * 100}%`;
+
+        if (audioPlayer.paused) {
+            audioPlayer.play().catch(err => {
+                console.log('需要用户交互:', err);
+            });
+        }
+
+        // 强制重绘歌词位置
+        lyricsElement.classList.add('noTransition');
+        isChoosing = true;
+        updateLyrics();
+        isChoosing = false;
+        requestAnimationFrame(() => {
+            lyricsElement.classList.remove('noTransition');
+        });
+    });
+}
+
+
+
 function loadSong(index) {
     if (index < 0 || index >= songs.length) return;
     currentSongIndex = index;
@@ -485,19 +469,46 @@ function loadSong(index) {
     // 加载歌词
     if (song.lrc) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             lyrics = parseLrc(e.target.result);
             updateLyricsDisplay();
         };
         reader.readAsText(song.lrc);
     }
+    // 获取封面相关元素
+    const coverImage = document.getElementById('coverImage');
+    const svgCover = document.getElementById('svgcover');
     // 加载封面
     if (song.image) {
-        bgImg.style.display="block";
+        // 显示封面图片，隐藏SVG
+        coverImage.style.display = "none";
+        svgCover.style.display = "none";
+        coverImage.src = URL.createObjectURL(song.image);
+        
+        // 保持背景图片处理逻辑
         bgImg.src = URL.createObjectURL(song.image);
-    }else{
-        bgImg.style.display="none"
+    } else {
+        // 隐藏封面图片，显示SVG
+        coverImage.style.display = "none";
+        svgCover.style.display = "block";
+        
+        // 重置背景为默认
+        bgImg.src = ''; 
+        document.body.style.setProperty('--background', "#000");
+        document.body.style.setProperty('--color1', "#000");
+        document.body.style.setProperty('--color2', "#000");
+        document.body.style.setProperty('--color3', "#000");
+        document.body.style.setProperty('--color4', "#000");
+        document.body.style.setProperty('--color5', "#000");
+        document.body.style.setProperty('--color1-rgba', "#000");
+        document.body.style.setProperty('--color2-rgba', "#000");
+        document.body.style.setProperty('--color3-rgba', "#000");
+        document.body.style.setProperty('--color4-rgba', "#000");
+        document.body.style.setProperty('--color5-rgba', "#000");
+        justSvg.style.display = "block";
+        svgcontainer.style.background = '#e8e8e8'; // 恢复默认背景色
     }
+
     // 播放音频（确保在 canplay 事件后）
     audioPlayer.addEventListener('canplay', () => {
         audioPlayer.play().catch(error => {
@@ -514,12 +525,12 @@ function loadSong(index) {
 function calculateOptimalPadding() {
     const container = document.querySelector('.name-container');
     const name = document.querySelector('.name');
-    
+
     // 根据文本长度动态调整间距
     const textRatio = name.scrollWidth / container.offsetWidth;
     if (textRatio > 3) { // 超长文本
         container.style.padding = '0 5px 0 5px';
-        name.style.animationDuration = `${8 * textRatio}s`; // 动态调整速度
+        //name.style.animationDuration = `${8 * textRatio}s`; // 动态调整速度
     } else if (textRatio > 2) { // 较长文本
         container.style.padding = '0 5px 0 5px';
     } else { // 正常长度
@@ -529,36 +540,55 @@ function calculateOptimalPadding() {
 
 function updateNameScroll() {
     const nameElement = document.querySelector('.name');
-    const container = document.querySelector('.name-container');
-    
+    const container = document.querySelector('.title-container');
+
     // 重置样式
     nameElement.style.animation = 'none';
     nameElement.style.transform = 'translateX(0)';
     void nameElement.offsetWidth; // 触发重绘
-    
+
     // 精确计算
     const textWidth = nameElement.scrollWidth;
     const containerWidth = container.offsetWidth;
-    
+
     // 切换模式
     if (textWidth > containerWidth) {
         nameElement.classList.add('scroll');
-        
-        nameElement.style.animation = 'marquee 8s linear infinite';
+
+        nameElement.style.animation = 'move 8s linear infinite';
+        nameElement.style.setProperty('animation','move ' + textWidth/100 + 's linear infinite');
+        let frame = `@Keyframes move {
+            from {
+                transform: translateX(260px);
+            }
+            to {
+                transform: translateX(-${textWidth}px)
+            }
+        }`;
+        // 找到对应的css样式表，先删除再新增
+        let sheets = document.styleSheets;
+        for (let i = 0;i< sheets.length; ++i) {
+            const item = sheets[i];
+            if (item.cssRules[0] && item.cssRules[0].name && item.cssRules[0].name === 'move') {
+                item.deleteRule(0);
+                item.insertRule(frame,0)
+            }
+        }
     } else {
         nameElement.classList.remove('scroll');
         nameElement.style.textAlign = 'center'; // 强制居中
     }
     // 用 JS 获取宽度并赋值给 CSS 变量
-    
+
 
 }
 
 
-// 折叠按钮逻辑
 
+// 折叠按钮逻辑
+/*
 toggleListButton.addEventListener('click', () => {
-    
+
     if (isListCollapsed) {
         songListContainer.style.display = 'block';
         toggleListButton.innerHTML = '<span>收起歌曲列表</span>';
@@ -567,29 +597,13 @@ toggleListButton.addEventListener('click', () => {
         toggleListButton.innerHTML = '<span>展开歌曲列表</span>';
     }
     isListCollapsed = !isListCollapsed;
-});
-
-
-
-// 播放模式切换逻辑
-//const playModeButton = document.getElementById('playMode');
-
-//let playMode = 0;
-/*
-playModeButton.addEventListener('click', () => {
-    playMode = (playMode + 1) % 3;
-    switch (playMode) {
-        case 0:
-            playModeButton.innerHTML = '<span>全部循环</span>';
-            break;
-        case 1:
-            playModeButton.innerHTML = '<span>单曲循环</span>';
-            break;
-        case 2:
-            playModeButton.innerHTML = '<span>随机播放</span>';
-            break;
-    }
 });*/
+
+
+
+
+
+
 
 // 歌曲播放结束逻辑
 audioPlayer.addEventListener('ended', () => {
@@ -634,7 +648,7 @@ const Icon2 = document.getElementById('playModeIcon2');
 let playMode = 0;
 
 // 播放模式图标配置
-const modeIcons = ["fas fa-repeat-alt","fas fa-repeat-1-alt","fas fa-random"];
+const modeIcons = ["fas fa-repeat-alt", "fas fa-repeat-1-alt", "fas fa-random"];
 
 modeButton.addEventListener('click', () => {
     playMode = (playMode + 1) % 3;
@@ -642,7 +656,7 @@ modeButton.addEventListener('click', () => {
     Icon1.style.display = 'none';
     Icon2.style.display = 'none';
     console.log(playMode)
-    switch(playMode){
+    switch (playMode) {
         case 0:
             Icon0.style.display = 'block';
             break;
