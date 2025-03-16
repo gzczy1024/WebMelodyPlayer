@@ -1,8 +1,24 @@
+@font-face {
+    font-family: '文道奶酪体';
+    src: url('webfonts/文道奶酪体改.ttf') format('ttf');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '文道奶酪体';
+    src: url('webfonts/文道奶酪体改.ttf') format('ttf');
+    font-weight: 600;
+    font-style: normal;
+}
+
 * {
-    font-family: system-ui, sans-serif;
+    font-family: '文道奶酪体', system-ui, sans-serif; /* 添加自定义字体 */
+    /*font-size: 15px;  设置基础字号 */
     -webkit-user-select: none;
     user-select: none;
 }
+
 
 body {
     height: 100vh;
@@ -81,7 +97,8 @@ input[type="file"] {
 
 .time {
     margin-top: 60px;
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -203,7 +220,7 @@ p {
     left: 0;
     width: 80%;
     transition: 0.75s cubic-bezier(.06, 1.38, .34, 1.12);
-    font-size: 22px;
+    font-size: 26px;
     line-height: 40px;
     z-index: 2;
     display: flex;
@@ -227,7 +244,7 @@ p {
 .lyrics > .highlight {
     margin: 0;
     opacity: 1;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     filter: none;
     width: 100%;
@@ -235,7 +252,7 @@ p {
 .lyrics > .lowlight {
     
     /*opacity: 1;*/
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
     
     width: 100%;
@@ -355,6 +372,7 @@ p {
 .list-group-item:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.004);
+    color: #fff;
 }
 
 .badge {
@@ -379,7 +397,9 @@ p {
     font-size: 22px;
 }
 
-
+.songLists{
+    font-size: 20px;
+}
 
 /* 修改后的.name样式 */
 /* 移除调试样式后最终版本 */
@@ -397,7 +417,8 @@ p {
 }
 
 .name {
-    font-size: 24px;
+    font-family: system-ui;
+    font-size: 26px;
     font-weight: 700;
     color: #fff;
     padding:0 5px 0 5px; /* 两侧留白 */
@@ -451,16 +472,17 @@ p {
 }
 
 
+
 .name {
     padding: 0 10px; /* 减少文字两侧间距 */
     animation: move 8s linear infinite; /* 加快滚动速度 */
 }
 
-/* 悬停时显示完整标题 */
+/* 悬停时显示完整标题 
 .name-container:hover {
     mask: none;
     overflow: visible;
-}
+}*/
 
 /* 紧凑模式下的视觉效果 */
 .name {
@@ -469,12 +491,12 @@ p {
     transition: all 0.3s ease; /* 平滑过渡 */
 }
 
-/* 悬停时展开显示 */
+/* 悬停时展开显示 
 .name-container:hover .name {
     letter-spacing: normal;
     transform: scale(1);
     animation-play-state: paused;
-}
+}*/
 
 .name:not(.scroll) {
     animation: none !important;

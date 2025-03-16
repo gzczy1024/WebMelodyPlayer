@@ -350,10 +350,10 @@ audioFileInput.addEventListener("change", (event) => {
 function renderSongList(songsArray) {
     const songList = document.getElementById('songList');
     songList.innerHTML = songsArray.map((song, index) => `
-        <a href="#" class="list-group-item list-group-item-action" data-index="${index}">
+        <a href="#" class="list-group-item list-group-item-action" data-index="${index}" style="color:#ccc;font-size:18px;font-weight:500;">
             ${song.name}
-            ${song.image ? '<span class="badge bg-primary ms-2" style="float:right">封面</span>' : ''}
-            ${song.lrc ? '<span class="badge bg-success ms-1" style="float:right">歌词</span>' : ''}
+            ${song.image ? '<span class="badge bg-primary ms-2" style="float:right;font-size:18px;font-weight:500;">封面</span>' : ''}
+            ${song.lrc ? '<span class="badge bg-success ms-1" style="float:right;font-size:18px;font-weight:500;">歌词</span>' : ''}
         </a>
     `).join('');
 
@@ -550,6 +550,21 @@ function updateNameScroll() {
     // 精确计算
     const textWidth = nameElement.scrollWidth;
     const containerWidth = container.offsetWidth;
+
+    // 新增鼠标事件监听
+    const handleHover = (pause) => {
+        if (textWidth > containerWidth) {
+            nameElement.style.animationPlayState = pause ? 'paused' : 'running';
+        }
+    };
+
+    // 清除旧监听器避免重复绑定
+    container.removeEventListener('mouseenter', handleHover.bind(null, true));
+    container.removeEventListener('mouseleave', handleHover.bind(null, false));
+
+    // 添加新监听器
+    container.addEventListener('mouseenter', handleHover.bind(null, true));
+    container.addEventListener('mouseleave', handleHover.bind(null, false));
 
     // 切换模式
     if (textWidth > containerWidth) {
