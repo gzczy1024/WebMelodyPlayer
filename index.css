@@ -1,14 +1,14 @@
 @font-face {
     font-family: '文道奶酪体';
-    src: url('webfonts/文道奶酪体改.ttf') format('ttf');
+    src: url('webfonts/文道奶酪体改.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
     font-family: '文道奶酪体';
-    src: url('webfonts/文道奶酪体改.ttf') format('ttf');
-    font-weight: 600;
+    src: url('webfonts/文道奶酪体改.ttf') format('truetype');
+    font-weight: 700;
     font-style: normal;
 }
 
@@ -97,7 +97,7 @@ input[type="file"] {
 
 .time {
     margin-top: 60px;
-    font-weight: 500;
+    font-weight: 700;
     font-size: 20px;
     display: flex;
     align-items: center;
@@ -145,7 +145,7 @@ p {
 }
 
 .controls i::before{
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     text-shadow: 0 0 3px #0009;
     width:30px;
     height: 30px;

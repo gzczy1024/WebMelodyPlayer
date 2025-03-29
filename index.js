@@ -297,6 +297,16 @@ bgImg.onload = () => {
     const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
 
     let colors = getDominantColors(imageData);
+    colors = colors.map(color => {
+        const matches = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
+        if (matches) {
+            const r = Math.min(255, Math.floor(matches[1] * 0.8));
+            const g = Math.min(255, Math.floor(matches[2] * 0.8));
+            const b = Math.min(255, Math.floor(matches[3] * 0.8));
+            return `rgba(${r}, ${g}, ${b}, 0.9)`;
+        }
+        return color;
+    });
     document.body.style.setProperty('--background', colors[0]);
     document.body.style.setProperty('--color1', colors[0]);
     document.body.style.setProperty('--color2', colors[1]);
@@ -350,10 +360,10 @@ audioFileInput.addEventListener("change", (event) => {
 function renderSongList(songsArray) {
     const songList = document.getElementById('songList');
     songList.innerHTML = songsArray.map((song, index) => `
-        <a href="#" class="list-group-item list-group-item-action" data-index="${index}" style="color:#ccc;font-size:18px;font-weight:500;">
+        <a href="#" class="list-group-item list-group-item-action" data-index="${index}" style="color:#ccc;font-size:21px;font-weight:700;">
             ${song.name}
-            ${song.image ? '<span class="badge bg-primary ms-2" style="float:right;font-size:18px;font-weight:500;">封面</span>' : ''}
-            ${song.lrc ? '<span class="badge bg-success ms-1" style="float:right;font-size:18px;font-weight:500;">歌词</span>' : ''}
+            ${song.image ? '<span class="badge bg-primary ms-2" style="float:right;font-size:17px;font-weight:400;">封面</span>' : ''}
+            ${song.lrc ? '<span class="badge bg-success ms-1" style="float:right;font-size:17px;font-weight:400;">歌词</span>' : ''}
         </a>
     `).join('');
 
@@ -592,6 +602,7 @@ function updateNameScroll() {
     } else {
         nameElement.classList.remove('scroll');
         nameElement.style.textAlign = 'center'; // 强制居中
+        nameElement.style.margin = 'auto'; // 强制居中
     }
     // 用 JS 获取宽度并赋值给 CSS 变量
 
@@ -716,3 +727,7 @@ audioPlayer.addEventListener('pause', () => {
     document.querySelector('.pause').style.display = 'none';
     playing = false;
 });
+
+document.getElementById('modal-close').addEventListener('click', () => {
+    isScrolling = 0;
+})

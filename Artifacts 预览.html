@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+    <script src="./kuromoji.js-master/build/kuromoji.js"></script>
+    <style>
+        /* 保持原有样式 */
+        .lyric-block { margin: 20px 0; font-family: 'MS PGothic', sans-serif; }
+        .time { color: #666; font-size: 0.8em; }
+        .japanese-line { font-size: 1.2em; line-height: 2.5; }
+        .japanese-line rt { font-size: 0.6em; color: #e91e63; }
+        .romaji-line { color: #2196F3; font-size: 0.9em; }
+        .translation-line { color: #4CAF50; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div id="lyrics-container"></div>
+
+<script>
+// 片假名转平假名函数
+const kataToHira = (str) => {
+    return str.replace(/[\u30A1-\u30FA]/g, match => {
+        return String.fromCharCode(match.charCodeAt(0) - 0x60);
+    }).replace(/゠/gu, "ー"); // 处理长音符号
+};
+
+// 初始化Kuromoji分词器
+kuromoji.builder({ dicPath: './kuromoji.js-master/dict/' }).build((err, tokenizer) => {
+    if(err) { throw err; }
+
+    // 示例歌词数据（需要预处理成这种结构）
+    const lyricsData = [
+        {
+            time: "[00:00.408]",
+            japanese: "君と夏の終わり 将来の夢",
+            romaji: "ki mi to na tsu no o wa ri sho u ra i no yu me",
+            translation: "无法忘记和你一起度过的夏末"
+        },
+        // 添加更多歌词数据...
+    ];
+
+    // 处理所有歌词
+    lyricsData.forEach(data => {
+        const tokens = tokenizer.tokenize(data.japanese);
+        const rubyHtml = tokens.map(token => {
+    // 获取原始读音并转换为平假名
+    const surface = token.surface_form;
+    const reading = token.reading ? kataToHira(token.reading) : surface;
+    
+    // 汉字检查（需要注音的情况）
+    if(/[\u4E00-\u9FAF]/.test(surface)) {
+        return `<ruby>${surface}<rt>${reading}</rt></ruby>`;
+    }
+    return surface;
+}).join('');
+
+        // 创建歌词块
+        const block = document.createElement('div');
+        block.className = 'lyric-block';
+        block.innerHTML = `
+            <div class="time">${data.time}</div>
+            <div class="japanese-line">${rubyHtml}</div>
+            <div class="romaji-line">${data.romaji}</div>
+            <div class="translation-line">${data.translation}</div>
+        `;
+        document.getElementById('lyrics-container').appendChild(block);
+    });
+});
+</script>
+</body>
+</html>
