@@ -36,7 +36,179 @@ audioPlayer.addEventListener("loadedmetadata", () => {
 });
 
 
+//-------------------------------------------------------------------------
 
+// ========== 罗马音配置 ==========
+const CUSTOM_ROMANJI_MAP = {
+    "10": "juu",
+    "8": "hachi",
+    "霄灯": "syoutou",
+    "永久": "towa",
+    "揺蕩う": "tayutou",
+    "一人": "hitori",
+    "二人": "futari",
+};
+
+const DICT_PATH = "/kuromoji.js-master/dict";
+let tokenizer;
+async function init() {
+    tokenizer = await initKuromojiOnce();
+    // 其他初始化代码...
+}
+// ========== 初始化分词器 ==========
+async function initKuromojiOnce() {
+    if (!tokenizer) {
+        const userDictionary = `
+一人,10,8,霄灯,永久,揺蕩う
+`.trim();
+        tokenizer = await new Promise((resolve, reject) => {
+            kuromoji.builder({
+                dicPath: DICT_PATH,
+                userDictionary: userDictionary // 注入用户词典
+            }).build((err, tokenizer) => {
+                err ? reject(err) : resolve(tokenizer);
+            });
+        });
+    }
+    return tokenizer;
+}
+
+
+// ========== 罗马音转换 ==========
+// ========== 修改后的罗马音转换函数 ==========
+/*
+async function tokenizeWithRomaji(texts) {
+    const tokenizer = await initKuromojiOnce();
+    return texts.map(text => {
+        // 原始分词结果
+        const tokens = tokenizer.tokenize(text);
+        
+        // 合并相邻token的增强逻辑
+        const mergedTokens = [];
+        let pointer = 0;
+        
+        while (pointer < tokens.length) {
+            let maxMatched = null;
+            
+            // 从最长可能组合开始检查（最多6字符）
+            for (let len = 6; len >= 1; len--) {
+                const candidates = tokens.slice(pointer, pointer + len);
+                const combinedSurface = candidates.map(t => t.surface_form).join('');
+                
+                // 优先检查自定义词典
+                if (CUSTOM_ROMANJI_MAP[combinedSurface]) {
+                    maxMatched = {
+                        surface: combinedSurface,
+                        pronunciation: CUSTOM_ROMANJI_MAP[combinedSurface],
+                        length: len
+                    };
+                    break; // 找到最长匹配立即停止
+                }
+            }
+            if (maxMatched) {
+                mergedTokens.push({
+                    surface_form: maxMatched.surface,
+                    pronunciation: maxMatched.pronunciation
+                });
+                pointer += maxMatched.length;
+            } else {
+                mergedTokens.push(tokens[pointer]);
+                pointer++;
+            }
+        }
+        // 生成最终罗马音
+        return mergedTokens.map(token => {
+            // 自定义发音优先
+            if (CUSTOM_ROMANJI_MAP[token.surface_form]) {
+                return CUSTOM_ROMANJI_MAP[token.surface_form];
+            }
+            // 原始处理逻辑
+            return wanakana.toRomaji(
+                token.pronunciation || 
+                token.reading || 
+                token.surface_form
+            );
+        }).join(" ");
+    });
+}
+*/
+// ========== 统一分词处理函数 ==========
+async function tokenizeWithRomaji(texts) {
+    const tokenizer = await initKuromojiOnce();
+    return texts.map(text => {
+        // 获取原始分词结果
+        const tokens = tokenizer.tokenize(text);
+
+        // 合并相邻token（与同步方法保持一致）
+        const mergedTokens = mergeTokens(tokens);
+
+        // 生成罗马音
+        return mergedTokens.map(token => {
+            return CUSTOM_ROMANJI_MAP[token.surface_form] ||
+                wanakana.toRomaji(token.pronunciation || token.reading || "");
+        }).join(" ");
+    });
+}
+
+// ========== 同步分词处理（用于注音生成） ==========
+function tokenizeWithRomajiSync(text) {
+    const tokens = tokenizer.tokenize(text);
+    return mergeTokens(tokens).map(token => ({
+        word: token.surface_form,
+        romaji: CUSTOM_ROMANJI_MAP[token.surface_form] ||
+            wanakana.toRomaji(token.pronunciation || token.reading || "")
+    }));
+}
+
+// ========== 统一合并逻辑 ==========
+function mergeTokens(tokens) {
+    const merged = [];
+    let pointer = 0;
+
+    while (pointer < tokens.length) {
+        let maxMatched = null;
+
+        // 从最长组合开始检查（6字符）
+        for (let len = 6; len >= 1; len--) {
+            const candidates = tokens.slice(pointer, pointer + len);
+            const combined = candidates.map(t => t.surface_form).join('');
+
+            if (CUSTOM_ROMANJI_MAP[combined]) {
+                maxMatched = {
+                    surface_form: combined,
+                    pronunciation: CUSTOM_ROMANJI_MAP[combined],
+                    reading: ""
+                };
+                pointer += len;
+                break;
+            }
+        }
+
+        if (maxMatched) {
+            merged.push(maxMatched);
+        } else {
+            merged.push(tokens[pointer]);
+            pointer++;
+        }
+    }
+
+    return merged;
+}
+
+// ========== 注音生成函数修正 ==========
+function createRubyText(original) {
+    const tokens = tokenizeWithRomajiSync(original);
+    return tokens.map(token => {
+        const customRomaji = CUSTOM_ROMANJI_MAP[token.word] || token.romaji;
+        return `<ruby>${token.word}<rt>${customRomaji}</rt></ruby>`;
+    }).join('');
+}
+
+//-------------------------------------------------------------------------
+
+function containsKana(text) {
+    return /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
+}
 
 
 function disableLyric() {
@@ -101,7 +273,7 @@ document.querySelector('.play-container').addEventListener('click', () => {
     } else {
         audioPlayer.play();
     }
-    
+
 
 });
 
@@ -126,7 +298,13 @@ function formatTime(time) {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 }
 
-function parseLrc(lrcText) {
+// ========== 日语检测 ==========
+function isJapanese(text) {
+    return /[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]/.test(text);
+}
+
+// ========== 异步歌词解析 ==========
+async function parseLrc(lrcText) {
     const lines = lrcText.trim().split('\n');
     const timeGroups = {};
 
@@ -135,12 +313,10 @@ function parseLrc(lrcText) {
         if (timeMatch) {
             const minutes = parseInt(timeMatch[1], 10);
             const seconds = parseInt(timeMatch[2], 10);
-            const msPart = timeMatch[3] || '';
-            const paddedMs = msPart.padEnd(3, '0').slice(0, 3);
-            const milliseconds = parseInt(paddedMs, 10);
-            const timeInSeconds = minutes * 60 + seconds + milliseconds / 1000;
-
+            const ms = timeMatch[3] ? parseInt(timeMatch[3].padEnd(3, '0'), 10) : 0;
+            const timeInSeconds = minutes * 60 + seconds + ms / 1000;
             const text = line.replace(timeMatch[0], '').trim();
+
             if (!timeGroups[timeInSeconds]) {
                 timeGroups[timeInSeconds] = [];
             }
@@ -148,18 +324,53 @@ function parseLrc(lrcText) {
         }
     });
 
-    return Object.keys(timeGroups)
-        .sort((a, b) => parseFloat(a) - parseFloat(b))
-        .map(timeStr => {
-            const texts = timeGroups[timeStr];
-            return {
-                time: parseFloat(timeStr),
-                originalText: texts[0] || '',
-                translation: texts[1] || '',
-                romaji: texts[2] || ''
-            };
+    const sortedTimes = Object.keys(timeGroups).sort((a, b) => a - b);
+    const lyrics = [];
+    const textsToProcess = [];
+    const indicesToProcess = [];
+
+    sortedTimes.forEach((timeStr, index) => {
+        const texts = timeGroups[timeStr];
+        const originalText = texts[0] || '';
+        if (containsKana(originalText)) {
+            textsToProcess.push(originalText);
+            indicesToProcess.push(index);
+        }
+    });
+
+    let romajiResults = [];
+    if (textsToProcess.length > 0) {
+        try {
+            romajiResults = await tokenizeWithRomaji(textsToProcess);
+        } catch (error) {
+            console.error('罗马音生成失败:', error);
+        }
+    }
+
+    let romajiIndex = 0;
+    sortedTimes.forEach((timeStr) => {
+        const texts = timeGroups[timeStr];
+        const originalText = texts[0] || '';
+        const translation = texts[1] || '';
+        let romaji = texts[2] || '';
+
+        if (containsKana(originalText)) {
+            romaji = romajiResults[romajiIndex] || '';
+            romajiIndex++;
+        }
+
+        lyrics.push({
+            time: parseFloat(timeStr),
+            originalText,
+            translation,
+            romaji
         });
+    });
+
+    return lyrics;
 }
+
+
 
 let isScrolling = 0;
 let scrollTimeout;
@@ -300,9 +511,9 @@ bgImg.onload = () => {
     colors = colors.map(color => {
         const matches = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
         if (matches) {
-            const r = Math.min(255, Math.floor(matches[1] * 0.8));
-            const g = Math.min(255, Math.floor(matches[2] * 0.8));
-            const b = Math.min(255, Math.floor(matches[3] * 0.8));
+            const r = Math.min(255, Math.floor(matches[1] * 0.6));
+            const g = Math.min(255, Math.floor(matches[2] * 0.6));
+            const b = Math.min(255, Math.floor(matches[3] * 0.6));
             return `rgba(${r}, ${g}, ${b}, 0.9)`;
         }
         return color;
@@ -377,7 +588,7 @@ function renderSongList(songsArray) {
         });
     });
 
-    
+
 }
 
 // 新增歌曲加载函数
@@ -394,6 +605,27 @@ document.getElementById('searchInput').addEventListener('input', function (e) {
     }
 });
 
+
+// ====== 修改歌词生成逻辑 ======
+function createRubyText(original) {
+    const tokens = tokenizeWithRomajiSync(original);
+    return tokens.map(token => {
+        const customRomaji = CUSTOM_ROMANJI_MAP[token.word] || token.romaji;
+        return `<ruby>${token.word}<rt>${customRomaji}</rt></ruby>`;
+    }).join('');
+}
+
+// ====== 同步分词函数 ======
+function tokenizeWithRomajiSync(text) {
+    const tokens = tokenizer.tokenize(text);
+    return mergeTokens(tokens).map(token => ({
+        word: token.surface_form,
+        romaji: CUSTOM_ROMANJI_MAP[token.surface_form] ||
+            wanakana.toRomaji(token.pronunciation || token.reading || "")
+    }));
+}
+
+/*
 function updateLyricsDisplay() {
     // 清空现有歌词
     while (lyricsElement.firstChild) {
@@ -410,6 +642,7 @@ function updateLyricsDisplay() {
         lyricDiv.className = 'lowlight';
 
         // 使用textContent防止XSS
+        console.log(line.originalText);
         const content = [line.originalText, line.translation, line.romaji]
             .filter(Boolean)
             .join('<br>');
@@ -431,6 +664,27 @@ function updateLyricsDisplay() {
 
     lyricsElement.appendChild(fragment);
 }
+*/
+// ====== 更新歌词显示函数 ======
+function updateLyricsDisplay() {
+    lyricsElement.innerHTML = lyrics.map(line => {
+        const parts = [];
+        if (containsKana(line.originalText)) {
+            parts.push(createRubyText(line.originalText));
+        } else {
+            parts.push(line.originalText);
+        }
+        if (line.translation) {
+            parts.push(`<div class="translation">${line.translation}</div>`);
+        }
+        return `<div class="lowlight" data-time="${line.time}">
+            ${parts.join('')}
+        </div>`;
+    }).join('');
+}
+
+
+
 
 // 新增统一处理函数
 function handleLyricClick(time) {
@@ -479,9 +733,15 @@ function loadSong(index) {
     // 加载歌词
     if (song.lrc) {
         const reader = new FileReader();
-        reader.onload = function (e) {
-            lyrics = parseLrc(e.target.result);
-            updateLyricsDisplay();
+        reader.onload = async function (e) {
+            try {
+                lyrics = await parseLrc(e.target.result);
+                updateLyricsDisplay();
+            } catch (error) {
+                console.error('歌词解析失败:', error);
+                lyrics = [];
+                updateLyricsDisplay();
+            }
         };
         reader.readAsText(song.lrc);
     }
@@ -494,16 +754,16 @@ function loadSong(index) {
         coverImage.style.display = "none";
         svgCover.style.display = "none";
         coverImage.src = URL.createObjectURL(song.image);
-        
+
         // 保持背景图片处理逻辑
         bgImg.src = URL.createObjectURL(song.image);
     } else {
         // 隐藏封面图片，显示SVG
         coverImage.style.display = "none";
         svgCover.style.display = "block";
-        
+
         // 重置背景为默认
-        bgImg.src = ''; 
+        bgImg.src = '';
         document.body.style.setProperty('--background', "#000");
         document.body.style.setProperty('--color1', "#000");
         document.body.style.setProperty('--color2', "#000");
@@ -529,7 +789,7 @@ function loadSong(index) {
     setTimeout(() => {
         calculateOptimalPadding();
         updateNameScroll();
-    }, 300);
+    }, 700);
 }
 
 function calculateOptimalPadding() {
@@ -581,7 +841,7 @@ function updateNameScroll() {
         nameElement.classList.add('scroll');
 
         nameElement.style.animation = 'move 8s linear infinite';
-        nameElement.style.setProperty('animation','move ' + textWidth/100 + 's linear infinite');
+        nameElement.style.setProperty('animation', 'move ' + textWidth / 100 + 's linear infinite');
         let frame = `@Keyframes move {
             from {
                 transform: translateX(260px);
@@ -592,11 +852,11 @@ function updateNameScroll() {
         }`;
         // 找到对应的css样式表，先删除再新增
         let sheets = document.styleSheets;
-        for (let i = 0;i< sheets.length; ++i) {
+        for (let i = 0; i < sheets.length; ++i) {
             const item = sheets[i];
             if (item.cssRules[0] && item.cssRules[0].name && item.cssRules[0].name === 'move') {
                 item.deleteRule(0);
-                item.insertRule(frame,0)
+                item.insertRule(frame, 0)
             }
         }
     } else {
@@ -697,6 +957,7 @@ modeButton.addEventListener('click', () => {
 
 // 新增歌曲切换函数
 function loadPreviousSong() {
+    isScrolling = 0;
     if (playMode === 2) { // 随机模式
         loadRandomSong();
     } else if (currentSongIndex > 0) {
@@ -707,6 +968,7 @@ function loadPreviousSong() {
 }
 
 function loadNextSong() {
+    isScrolling = 0;
     if (playMode === 2) { // 随机模式
         loadRandomSong();
     } else if (currentSongIndex < songs.length - 1) {
@@ -731,3 +993,13 @@ audioPlayer.addEventListener('pause', () => {
 document.getElementById('modal-close').addEventListener('click', () => {
     isScrolling = 0;
 })
+
+
+// 在index.js的适当位置（如初始化函数或文件末尾）添加：
+lyricsElement.addEventListener('click', (e) => {
+    const lyricLine = e.target.closest('div[data-time]');
+    if (lyricLine) {
+        const time = parseFloat(lyricLine.dataset.time);
+        handleLyricClick(time);
+    }
+});

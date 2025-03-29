@@ -188,12 +188,12 @@ p {
 }
 
 .lyricscontainer {
-    width: 45vw;
+    width: 50vw;
     height: 100vh;
     overflow: hidden;
     position: relative;
     z-index: 2;
-    padding: 0 10%;
+    padding: 0 5%;
     overflow-y: scroll;
     scrollbar-width:none;
 }
@@ -206,7 +206,8 @@ p {
     position: absolute;
     top: 50%;
     left: 0;
-    width: 80%;
+    width: 100%;
+    padding: 0 5%;
     transition: 0.75s cubic-bezier(.06, 1.38, .34, 1.12);
     font-size: 26px;
     line-height: 40px;
@@ -219,7 +220,7 @@ p {
 }
 
 .lyrics > div {
-    margin: 3px;
+    margin: 8px;
     opacity: 0.3;
     transition: opacity 0.75s cubic-bezier(.06, 1.38, .34, 1.12),
         font-size 0.75s cubic-bezier(.06, 1.38, .34, 1.12),
@@ -227,6 +228,8 @@ p {
         margin-left 0.75s cubic-bezier(.06, 1.38, .34, 1.12);
     width: 100%;
     text-shadow: 0 0 3px #0009;
+    word-break: break-word;
+    padding: 0 15px;
 }
 
 .lyrics > .highlight {
@@ -367,3 +370,69 @@ p {
 }
 .lyrics > div:active { transform: scale(0.95); }
 .lyrics > div:hover { opacity: 0.7 !important; }
+
+
+ruby {
+    
+    text-align: center;
+  }
+  rt {
+    font-size: 1.2em;
+    opacity: 0.8;
+    transform: translateY(0.3em);
+  }
+  .translation {
+    font-size: 0.8em;
+    
+    margin-top: 0.1em;
+  }
+  
+/* 调整左侧容器宽度 */
+.leftcontent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 5%; /* 减少左侧内边距 */
+    width: 35%; /* 限制容器宽度 */
+    max-width: 380px; /* 最大宽度限制 */
+}
+
+/* 调整封面容器尺寸 */
+.svgcontainer {
+    width: 250px; /* 缩小封面容器 */
+    height: 250px;
+    /* 其他原有样式保持不变 */
+}
+
+/* 增大注音字体大小 */
+rt {
+    font-size: 0.6em; /* 原为0.8em */
+    transform: translateY(0.1em); /* 调整注音位置 */
+    opacity: 0.9; /* 提高注音可见性 */
+}
+
+/* 调整歌词字体大小 */
+.lyrics {
+    font-size: 32px; /* 原为26px */
+    line-height: 34px; /* 相应调整行高 */
+}
+
+/* 高亮歌词字体调整 */
+.lyrics > .highlight {
+    font-size: 34px; /* 原为28px */
+}
+
+/* 低亮歌词字体调整 */
+.lyrics > .lowlight {
+    font-size: 30px; /* 原为24px */
+}
+
+/* 开启GPU加速 */
+.lyrics > div {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+  
+
+  
